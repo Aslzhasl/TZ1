@@ -1,0 +1,179 @@
+openapi: 3.0.0
+info:
+  title: Person Enrichment API
+  version: 1.0.0
+  description: |
+    This API accepts names and enriches them with age, gender, and nationality using public APIs.
+    It supports creating, retrieving, updating, deleting, and partially updating person records.
+
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /:
+    get:
+      summary: Get all people
+      tags: [People]
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Filter by name
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Limit the number of results
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+          description: Offset the result set
+      responses:
+        '200':
+          description: A list of people
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Person'
+
+  /people:
+    post:
+      summary: Create and enrich a new person
+      tags: [People]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonInput'
+      responses:
+        '201':
+          description: Person created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '400':
+          description: Invalid input
+        '500':
+          description: Enrichment or database failure
+
+  /people/{id}:
+    get:
+      summary: Get person by ID
+      tags: [People]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: A single person
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Person'
+        '404':
+          description: Person not found
+
+    put:
+      summary: Replace a person record
+      tags: [People]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PersonInput'
+      responses:
+        '200':
+          description: Person updated
+        '400':
+          description: Invalid input
+        '404':
+          description: Person not found
+
+    patch:
+      summary: Partially update a person record
+      tags: [People]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              example:
+                surname: "Updated"
+                age: 32
+      responses:
+        '200':
+          description: Person patched
+        '400':
+          description: Invalid input
+        '404':
+          description: Person not found
+
+    delete:
+      summary: Delete a person by ID
+      tags: [People]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Person deleted
+        '404':
+          description: Person not found
+
+components:
+  schemas:
+    PersonInput:
+      type: object
+      required:
+        - name
+        - surname
+      properties:
+        name:
+          type: string
+        surname:
+          type: string
+        patronymic:
+          type: string
+
+    Person:
+      allOf:
+        - $ref: '#/components/schemas/PersonInput'
+        - type: object
+          properties:
+            id:
+              type: integer
+            age:
+              type: integer
+            gender:
+              type: string
+            nationality:
+              type: string
